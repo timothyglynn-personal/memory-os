@@ -1,65 +1,230 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { Task, FocusItem } from "@/lib/types";
+import {
+  loadTasks,
+  saveTasks,
+  loadFocus,
+  saveFocus,
+  loadCustomBuckets,
+  saveCustomBuckets,
+  createTask,
+  updateTask,
+  deleteTask,
+  addToFocus,
+  removeFromFocus,
+} from "@/lib/store";
+import Sidebar from "@/components/Sidebar";
+import TaskList from "@/components/TaskList";
+import FocusPanel from "@/components/FocusPanel";
+import QuickCapture from "@/components/QuickCapture";
 
 export default function Home() {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [focusItems, setFocusItems] = useState<FocusItem[]>([]);
+  const [customBuckets, setCustomBuckets] = useState<string[]>([]);
+  const [selectedBucket, setSelectedBucket] = useState<string | null>(null);
+  const [captureOpen, setCaptureOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    setTasks(loadTasks());
+    setFocusItems(loadFocus());
+    setCustomBuckets(loadCustomBuckets());
+    setMounted(true);
+  }, []);
+
+  // Cmd+K shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setCaptureOpen((prev) => !prev);
+      }
+      if (e.key === "Escape") {
+        setCaptureOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const handleCreateTask = useCallback(
+    (data: Partial<Task> & { title: string }) => {
+      setTasks((prev) => createTask(prev, data));
+    },
+    []
+  );
+
+  const handleUpdateTask = useCallback(
+    (id: string, data: Partial<Task>) => {
+      setTasks((prev) => updateTask(prev, id, data));
+    },
+    []
+  );
+
+  const handleDeleteTask = useCallback(
+    (id: string) => {
+      setTasks((prev) => deleteTask(prev, id));
+      // Also remove from focus
+      setFocusItems((prev) => {
+        const updated = prev.filter((f) => f.task_id !== id);
+        saveFocus(updated);
+        return updated;
+      });
+    },
+    []
+  );
+
+  const handleAddToFocus = useCallback(
+    (taskId: string, timeframe: "today" | "week") => {
+      setFocusItems((prev) => addToFocus(prev, taskId, timeframe));
+    },
+    []
+  );
+
+  const handleRemoveFromFocus = useCallback(
+    (focusId: string) => {
+      setFocusItems((prev) => removeFromFocus(prev, focusId));
+    },
+    []
+  );
+
+  const handleCompleteTask = useCallback(
+    (taskId: string) => {
+      setTasks((prev) => {
+        const task = prev.find((t) => t.id === taskId);
+        if (!task) return prev;
+        return updateTask(prev, taskId, {
+          status: task.status === "completed" ? "active" : "completed",
+          completed_at:
+            task.status === "completed" ? null : new Date().toISOString(),
+        });
+      });
+    },
+    []
+  );
+
+  const handleRollOver = useCallback(() => {
+    setTasks((prevTasks) => {
+      setFocusItems((prevFocus) => {
+        const todayFocus = prevFocus.filter((f) => f.timeframe === "today");
+        const incompleteFocusItems = todayFocus.filter((f) => {
+          const task = prevTasks.find((t) => t.id === f.task_id);
+          return task && task.status !== "completed";
+        });
+
+        // Increment rolled_over_count for incomplete tasks
+        let updatedTasks = [...prevTasks];
+        for (const item of incompleteFocusItems) {
+          updatedTasks = updatedTasks.map((t) =>
+            t.id === item.task_id
+              ? { ...t, rolled_over_count: t.rolled_over_count + 1 }
+              : t
+          );
+        }
+        saveTasks(updatedTasks);
+
+        // Remove completed today items from focus
+        const completedTodayIds = todayFocus
+          .filter((f) => {
+            const task = prevTasks.find((t) => t.id === f.task_id);
+            return task && task.status === "completed";
+          })
+          .map((f) => f.id);
+
+        const updatedFocus = prevFocus.filter(
+          (f) => !completedTodayIds.includes(f.id)
+        );
+        saveFocus(updatedFocus);
+        return updatedFocus;
+      });
+      return prevTasks;
+    });
+    // Force reload
+    setTasks(loadTasks());
+  }, []);
+
+  const handleAddBucket = useCallback((name: string) => {
+    setCustomBuckets((prev) => {
+      const updated = [...prev, name];
+      saveCustomBuckets(updated);
+      return updated;
+    });
+  }, []);
+
+  const handleCaptureTasksCreated = useCallback(
+    (newTasks: Partial<Task>[]) => {
+      setTasks((prev) => {
+        let updated = prev;
+        for (const t of newTasks) {
+          updated = createTask(updated, {
+            title: t.title || "Untitled task",
+            bucket: t.bucket,
+            priority: t.priority,
+          });
+        }
+        return updated;
+      });
+    },
+    []
+  );
+
+  // Compute task counts per bucket
+  const taskCounts: Record<string, number> = {};
+  for (const task of tasks) {
+    if (task.status === "active") {
+      taskCounts[task.bucket] = (taskCounts[task.bucket] || 0) + 1;
+    }
+  }
+
+  if (!mounted) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <span className="text-muted">Loading...</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="h-screen flex">
+      <Sidebar
+        selectedBucket={selectedBucket}
+        onSelectBucket={setSelectedBucket}
+        customBuckets={customBuckets}
+        onAddBucket={handleAddBucket}
+        taskCounts={taskCounts}
+      />
+
+      <TaskList
+        tasks={tasks}
+        selectedBucket={selectedBucket}
+        onUpdate={handleUpdateTask}
+        onDelete={handleDeleteTask}
+        onCreateTask={handleCreateTask}
+        onAddToFocus={handleAddToFocus}
+      />
+
+      <FocusPanel
+        tasks={tasks}
+        focusItems={focusItems}
+        onRemoveFromFocus={handleRemoveFromFocus}
+        onCompleteTask={handleCompleteTask}
+        onRollOver={handleRollOver}
+      />
+
+      <QuickCapture
+        isOpen={captureOpen}
+        onClose={() => setCaptureOpen(false)}
+        onTasksCreated={handleCaptureTasksCreated}
+      />
+
+      {/* Cmd+K hint */}
+      <div className="fixed bottom-4 right-4 text-xs text-muted/50">
+        Cmd+K to capture
+      </div>
     </div>
   );
 }
