@@ -53,6 +53,7 @@ export function createTask(
     bucket: data.bucket || "Personal",
     priority: data.priority || "medium",
     status: "active",
+    type: data.type || "task",
     parent_id: data.parent_id || null,
     sort_order: data.sort_order || tasks.length,
     rolled_over_count: 0,

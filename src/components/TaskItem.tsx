@@ -55,43 +55,51 @@ export default function TaskItem({
     setEditTitle(task.title);
   };
 
+  const isProject = task.type === "project";
+
   return (
     <div className={`${depth > 0 ? "ml-6 border-l border-border/50 pl-3" : ""}`}>
       <div
         className={`group flex items-center gap-2 py-1.5 px-2 rounded hover:bg-surface transition-colors ${
           task.status === "completed" ? "opacity-50" : ""
-        }`}
+        } ${isProject ? "mt-3 mb-1" : ""}`}
       >
         {/* Expand toggle */}
-        {children.length > 0 ? (
+        {children.length > 0 || isProject ? (
           <button
             onClick={() => setExpanded(!expanded)}
             className="text-muted hover:text-foreground text-xs w-4 flex-shrink-0"
           >
-            {expanded ? "v" : ">"}
+            {expanded ? "▾" : "▸"}
           </button>
         ) : (
           <span className="w-4 flex-shrink-0" />
         )}
 
-        {/* Checkbox */}
-        <button
-          onClick={handleComplete}
-          className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${
-            task.status === "completed"
-              ? "bg-gold border-gold"
-              : "border-border hover:border-gold"
-          }`}
-        >
-          {task.status === "completed" && (
-            <span className="text-background text-xs font-bold">✓</span>
-          )}
-        </button>
+        {/* Checkbox (not for projects) */}
+        {isProject ? (
+          <span className="w-4 h-4 flex-shrink-0 flex items-center justify-center text-gold text-sm">◆</span>
+        ) : (
+          <button
+            onClick={handleComplete}
+            className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${
+              task.status === "completed"
+                ? "bg-gold border-gold"
+                : "border-border hover:border-gold"
+            }`}
+          >
+            {task.status === "completed" && (
+              <span className="text-background text-xs font-bold">✓</span>
+            )}
+          </button>
+        )}
 
-        {/* Priority dot */}
-        <span
-          className={`w-2 h-2 rounded-full flex-shrink-0 ${priorityColors[task.priority]}`}
-        />
+        {/* Priority dot (not for projects) */}
+        {isProject ? null : (
+          <span
+            className={`w-2 h-2 rounded-full flex-shrink-0 ${priorityColors[task.priority]}`}
+          />
+        )}
 
         {/* Title */}
         {editing ? (
@@ -112,7 +120,7 @@ export default function TaskItem({
             onDoubleClick={handleDoubleClick}
             className={`flex-1 text-sm cursor-default select-none ${
               task.status === "completed" ? "line-through text-muted" : ""
-            }`}
+            } ${isProject ? "font-semibold text-gold/90 uppercase tracking-wide text-xs" : ""}`}
           >
             {task.title}
           </span>

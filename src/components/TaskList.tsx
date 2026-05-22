@@ -25,6 +25,8 @@ export default function TaskList({
   const [newPriority, setNewPriority] = useState<"high" | "medium" | "low">("medium");
   const [addingSubtaskTo, setAddingSubtaskTo] = useState<string | null>(null);
   const [subtaskTitle, setSubtaskTitle] = useState("");
+  const [newProjectTitle, setNewProjectTitle] = useState("");
+  const [showProjectInput, setShowProjectInput] = useState(false);
 
   const filteredTasks = selectedBucket
     ? tasks.filter((t) => t.bucket === selectedBucket)
@@ -65,11 +67,56 @@ export default function TaskList({
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-border">
+      <div className="px-6 py-4 border-b border-border flex items-center justify-between">
         <h1 className="text-lg font-semibold text-foreground">
           {selectedBucket || "All Tasks"}
         </h1>
+        {selectedBucket && (
+          <button
+            onClick={() => setShowProjectInput(true)}
+            className="text-xs bg-gold/20 text-gold px-3 py-1.5 rounded hover:bg-gold/30 transition-colors"
+          >
+            + Project
+          </button>
+        )}
       </div>
+
+      {/* New project input */}
+      {showProjectInput && (
+        <div className="px-6 py-3 border-b border-border bg-surface/50">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newProjectTitle}
+              onChange={(e) => setNewProjectTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newProjectTitle.trim()) {
+                  onCreateTask({ title: newProjectTitle.trim(), bucket: selectedBucket || "Professional", type: "project" });
+                  setNewProjectTitle("");
+                  setShowProjectInput(false);
+                }
+                if (e.key === "Escape") setShowProjectInput(false);
+              }}
+              placeholder="Project name..."
+              autoFocus
+              className="flex-1 bg-surface border border-border rounded px-3 py-1.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-gold"
+            />
+            <button
+              onClick={() => {
+                if (newProjectTitle.trim()) {
+                  onCreateTask({ title: newProjectTitle.trim(), bucket: selectedBucket || "Professional", type: "project" });
+                  setNewProjectTitle("");
+                  setShowProjectInput(false);
+                }
+              }}
+              className="bg-gold text-background font-medium px-3 py-1.5 rounded text-sm hover:bg-gold-dim"
+            >
+              Create
+            </button>
+            <button onClick={() => setShowProjectInput(false)} className="text-muted text-sm hover:text-foreground">Cancel</button>
+          </div>
+        </div>
+      )}
 
       {/* Task list */}
       <div className="flex-1 overflow-y-auto px-6 py-4">

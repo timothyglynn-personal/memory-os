@@ -4,6 +4,7 @@ export interface Task {
   bucket: string;
   priority: "high" | "medium" | "low";
   status: "active" | "completed" | "archived";
+  type: "project" | "task";
   parent_id: string | null;
   sort_order: number;
   rolled_over_count: number;
