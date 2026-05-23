@@ -50,7 +50,9 @@ export function createTask(
   const task: Task = {
     id: generateId(),
     title: data.title,
+    notes: data.notes || "",
     bucket: data.bucket || "Personal",
+    sub_bucket: data.sub_bucket || "",
     priority: data.priority || "medium",
     status: "active",
     type: data.type || "task",

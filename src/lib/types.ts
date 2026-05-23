@@ -1,7 +1,9 @@
 export interface Task {
   id: string;
   title: string;
+  notes: string;
   bucket: string;
+  sub_bucket: string;
   priority: "high" | "medium" | "low";
   status: "active" | "completed" | "archived";
   type: "project" | "task";
