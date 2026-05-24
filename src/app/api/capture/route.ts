@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { createAdminClient } from "@/lib/supabase";
 
 const SYSTEM_PROMPT = `Parse these notes into structured tasks. The input may be messy, unstructured, or stream-of-consciousness. Extract every actionable item.
 
@@ -53,7 +54,20 @@ export async function POST(request: NextRequest) {
       tasks = JSON.parse(content);
     }
 
-    return new Response(JSON.stringify({ tasks, count: tasks.length }), {
+    // Persist to Supabase
+    const supabase = createAdminClient();
+    const rows = tasks.map((t: { title: string; bucket?: string; sub_bucket?: string; priority?: string; notes?: string }, i: number) => ({
+      title: t.title,
+      bucket: t.bucket || "Personal",
+      sub_bucket: t.sub_bucket || "",
+      priority: t.priority || "medium",
+      notes: t.notes || "",
+      sort_order: i,
+    }));
+    const { error: insertError } = await supabase.from("memory_tasks").insert(rows);
+    if (insertError) console.error("Supabase insert error:", insertError.message);
+
+    return new Response(JSON.stringify({ tasks, count: tasks.length, persisted: !insertError }), {
       status: 200,
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });

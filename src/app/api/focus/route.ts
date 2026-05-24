@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server";
+import { createAdminClient } from "@/lib/supabase";
 
 export async function GET() {
-  // TODO: Fetch from Supabase
-  // const { data } = await supabase.from('focus_layers').select('*');
-  return Response.json({ focus: [], message: "Connect Supabase to enable server-side storage" });
+  const supabase = createAdminClient();
+  const { data, error } = await supabase.from("memory_focus").select("*");
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ focus: data });
 }
 
 export async function POST(request: NextRequest) {
@@ -13,14 +15,15 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "task_id and timeframe required" }, { status: 400 });
   }
 
-  if (!["today", "week"].includes(timeframe)) {
-    return Response.json({ error: "timeframe must be 'today' or 'week'" }, { status: 400 });
-  }
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("memory_focus")
+    .insert({ task_id, timeframe })
+    .select()
+    .single();
 
-  // TODO: Insert into Supabase
-  // const { data } = await supabase.from('focus_layers').insert({ task_id, timeframe }).select().single();
-
-  return Response.json({ focus: { task_id, timeframe }, message: "Connect Supabase to persist" });
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ focus: data });
 }
 
 export async function DELETE(request: NextRequest) {
@@ -31,8 +34,8 @@ export async function DELETE(request: NextRequest) {
     return Response.json({ error: "Focus item ID required" }, { status: 400 });
   }
 
-  // TODO: Delete from Supabase
-  // await supabase.from('focus_layers').delete().eq('id', id);
-
-  return Response.json({ deleted: id, message: "Connect Supabase to persist" });
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("memory_focus").delete().eq("id", id);
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ deleted: id });
 }

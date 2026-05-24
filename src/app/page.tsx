@@ -33,8 +33,23 @@ export default function Home() {
   const [showFocus, setShowFocus] = useState(false);
 
   useEffect(() => {
-    setTasks(loadTasks());
-    setFocusItems(loadFocus());
+    // Load from Supabase via API
+    fetch("/api/tasks").then(r => r.json()).then(data => {
+      if (data.tasks?.length > 0) {
+        setTasks(data.tasks);
+      } else {
+        setTasks(loadTasks()); // fallback to localStorage
+      }
+    }).catch(() => setTasks(loadTasks()));
+
+    fetch("/api/focus").then(r => r.json()).then(data => {
+      if (data.focus?.length > 0) {
+        setFocusItems(data.focus);
+      } else {
+        setFocusItems(loadFocus());
+      }
+    }).catch(() => setFocusItems(loadFocus()));
+
     setCustomBuckets(loadCustomBuckets());
     setMounted(true);
   }, []);
@@ -52,15 +67,27 @@ export default function Home() {
 
   const handleCreateTask = useCallback((data: Partial<Task> & { title: string }) => {
     setTasks((prev) => createTask(prev, data));
+    // Also persist to Supabase
+    fetch("/api/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).catch(() => {});
   }, []);
 
   const handleUpdateTask = useCallback((id: string, data: Partial<Task>) => {
     setTasks((prev) => updateTask(prev, id, data));
+    fetch("/api/tasks", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...data }),
+    }).catch(() => {});
   }, []);
 
   const handleDeleteTask = useCallback((id: string) => {
     setTasks((prev) => deleteTask(prev, id));
     setFocusItems((prev) => { const u = prev.filter((f) => f.task_id !== id); saveFocus(u); return u; });
+    fetch(`/api/tasks?id=${id}`, { method: "DELETE" }).catch(() => {});
   }, []);
 
   const handleAddToFocus = useCallback((taskId: string, timeframe: "today" | "week") => {

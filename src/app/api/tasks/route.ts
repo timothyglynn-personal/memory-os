@@ -1,32 +1,34 @@
 import { NextRequest } from "next/server";
-
-// API routes ready for Supabase connection.
-// Currently, the app uses localStorage on the client side.
-// When Supabase is connected, these routes will handle persistence.
+import { createAdminClient } from "@/lib/supabase";
 
 export async function GET() {
-  // TODO: Fetch from Supabase
-  // const { data, error } = await supabase.from('tasks').select('*').order('sort_order');
-  return Response.json({ tasks: [], message: "Connect Supabase to enable server-side storage" });
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("memory_tasks")
+    .select("*")
+    .order("sort_order", { ascending: true });
+
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ tasks: data });
 }
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { title, bucket, priority, parent_id } = body;
+  const { title, bucket, sub_bucket, priority, parent_id, type, notes } = body;
 
   if (!title) {
     return Response.json({ error: "Title is required" }, { status: 400 });
   }
 
-  // TODO: Insert into Supabase
-  // const { data, error } = await supabase.from('tasks').insert({
-  //   title, bucket, priority, parent_id
-  // }).select().single();
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("memory_tasks")
+    .insert({ title, bucket: bucket || "Personal", sub_bucket: sub_bucket || "", priority: priority || "medium", parent_id: parent_id || null, type: type || "task", notes: notes || "" })
+    .select()
+    .single();
 
-  return Response.json({
-    task: { title, bucket, priority, parent_id },
-    message: "Connect Supabase to persist",
-  });
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ task: data });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -37,10 +39,16 @@ export async function PATCH(request: NextRequest) {
     return Response.json({ error: "Task ID is required" }, { status: 400 });
   }
 
-  // TODO: Update in Supabase
-  // const { data, error } = await supabase.from('tasks').update(updates).eq('id', id).select().single();
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("memory_tasks")
+    .update(updates)
+    .eq("id", id)
+    .select()
+    .single();
 
-  return Response.json({ task: { id, ...updates }, message: "Connect Supabase to persist" });
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ task: data });
 }
 
 export async function DELETE(request: NextRequest) {
@@ -51,8 +59,9 @@ export async function DELETE(request: NextRequest) {
     return Response.json({ error: "Task ID is required" }, { status: 400 });
   }
 
-  // TODO: Delete from Supabase
-  // await supabase.from('tasks').delete().eq('id', id);
+  const supabase = createAdminClient();
+  const { error } = await supabase.from("memory_tasks").delete().eq("id", id);
 
-  return Response.json({ deleted: id, message: "Connect Supabase to persist" });
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ deleted: id });
 }
