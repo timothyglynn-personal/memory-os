@@ -191,7 +191,10 @@ export default function Home() {
                     <span className="text-xs text-muted">{bucketTasks.length} tasks</span>
                   </button>
                   <button
-                    onClick={() => setNewSubBucket({ bucket })}
+                    onClick={() => {
+                      setNewSubBucket({ bucket });
+                      setExpandedBuckets((prev) => { const next = new Set(prev); next.add(bucket); return next; });
+                    }}
                     className="text-xs text-muted hover:text-gold px-2 py-1 rounded hover:bg-surface"
                   >
                     + Sub-bucket
@@ -378,22 +381,36 @@ function TaskRow({ task, onComplete, onDelete, onUpdate, onAddToFocus, editingTa
             />
           </div>
 
-          {/* Move to sub-bucket */}
-          {allSubBuckets && allSubBuckets.length > 0 && (
+          {/* Move task */}
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <label className="text-[10px] text-muted">Move to:</label>
+              <label className="text-[10px] text-muted">Bucket:</label>
               <select
-                value={task.sub_bucket || ""}
-                onChange={(e) => onUpdate(task.id, { sub_bucket: e.target.value })}
+                value={task.bucket || ""}
+                onChange={(e) => onUpdate(task.id, { bucket: e.target.value, sub_bucket: "" })}
                 className="text-[10px] bg-background border border-border rounded px-2 py-1 text-foreground focus:outline-none focus:border-gold"
               >
-                <option value="">General (no sub-bucket)</option>
-                {allSubBuckets.map((sub) => (
-                  <option key={sub} value={sub}>{sub}</option>
+                {["Professional", "Career", "Personal", "Family", "Health", "Ideas", "Someday"].map((b) => (
+                  <option key={b} value={b}>{b}</option>
                 ))}
               </select>
             </div>
-          )}
+            {allSubBuckets && allSubBuckets.length > 0 && (
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] text-muted">Sub-bucket:</label>
+                <select
+                  value={task.sub_bucket || ""}
+                  onChange={(e) => onUpdate(task.id, { sub_bucket: e.target.value })}
+                  className="text-[10px] bg-background border border-border rounded px-2 py-1 text-foreground focus:outline-none focus:border-gold"
+                >
+                  <option value="">General</option>
+                  {allSubBuckets.map((sub) => (
+                    <option key={sub} value={sub}>{sub}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
 
           {/* Action buttons */}
           <div className="flex flex-wrap gap-2">
