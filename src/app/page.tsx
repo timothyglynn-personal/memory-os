@@ -341,44 +341,56 @@ function TaskRow({ task, onComplete, onDelete, onUpdate, onAddToFocus, editingTa
   editNotes: string;
   setEditNotes: (s: string) => void;
 }) {
-  const [showMenu, setShowMenu] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const priorityColors = { high: "bg-red-400", medium: "bg-yellow-400", low: "bg-green-400" };
+  const isEditing = editingTask === task.id;
 
   return (
-    <div className="group">
-      <div className={`flex items-center gap-2 py-1 px-2 rounded hover:bg-background/50 transition-colors ${task.status === "completed" ? "opacity-40" : ""}`}>
-        <button onClick={() => onComplete(task.id)} className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${task.status === "completed" ? "bg-gold border-gold" : "border-border hover:border-gold"}`}>
-          {task.status === "completed" && <span className="text-background text-[8px] font-bold">✓</span>}
+    <div className={`rounded-lg border transition-colors ${task.status === "completed" ? "opacity-40 border-border/30" : task.status === "archived" ? "opacity-30 border-border/20" : "border-border/50 hover:border-border"} ${expanded || isEditing ? "bg-background/50 border-border" : ""}`}>
+      {/* Main row */}
+      <div className="flex items-center gap-2 py-2 px-3">
+        <button onClick={() => onComplete(task.id)} className={`w-5 h-5 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${task.status === "completed" ? "bg-gold border-gold" : "border-border hover:border-gold"}`}>
+          {task.status === "completed" && <span className="text-background text-xs font-bold">✓</span>}
         </button>
-        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${priorityColors[task.priority]}`} />
-        <span className={`flex-1 text-xs ${task.status === "completed" ? "line-through text-muted" : "text-foreground"}`}>{task.title}</span>
-        {task.notes && <span className="text-[10px] text-muted">📝</span>}
-        {task.rolled_over_count > 0 && <span className="text-[10px] bg-gold/20 text-gold px-1 rounded">{task.rolled_over_count}x</span>}
-        <div className="relative opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={() => setShowMenu(!showMenu)} className="text-muted hover:text-foreground text-xs px-1">⋯</button>
-          {showMenu && (
-            <div className="absolute right-0 top-5 z-20 bg-surface border border-border rounded shadow-lg py-1 min-w-[120px]">
-              <button onClick={() => { setEditingTask(task.id); setEditNotes(task.notes || ""); setShowMenu(false); }} className="block w-full text-left px-3 py-1 text-xs hover:bg-background/50">Edit notes</button>
-              <button onClick={() => { onAddToFocus(task.id, "today"); setShowMenu(false); }} className="block w-full text-left px-3 py-1 text-xs hover:bg-background/50">Focus: Today</button>
-              <button onClick={() => { onAddToFocus(task.id, "week"); setShowMenu(false); }} className="block w-full text-left px-3 py-1 text-xs hover:bg-background/50">Focus: Week</button>
-              <button onClick={() => { const next = task.priority === "high" ? "medium" : task.priority === "medium" ? "low" : "high"; onUpdate(task.id, { priority: next }); setShowMenu(false); }} className="block w-full text-left px-3 py-1 text-xs hover:bg-background/50">Cycle priority</button>
-              <button onClick={() => { onDelete(task.id); setShowMenu(false); }} className="block w-full text-left px-3 py-1 text-xs text-red-400 hover:bg-background/50">Delete</button>
-            </div>
-          )}
-        </div>
+        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${priorityColors[task.priority]}`} />
+        <button onClick={() => setExpanded(!expanded)} className={`flex-1 text-left text-sm ${task.status === "completed" ? "line-through text-muted" : "text-foreground"}`}>
+          {task.title}
+        </button>
+        {task.notes && <span className="text-xs text-muted/60">📝</span>}
+        <button onClick={() => onUpdate(task.id, { status: "archived" })} className="text-xs text-muted hover:text-orange-400 px-1" title="Not relevant">✕</button>
       </div>
-      {editingTask === task.id && (
-        <div className="ml-8 mt-1 mb-2">
-          <textarea
-            value={editNotes}
-            onChange={(e) => setEditNotes(e.target.value)}
-            placeholder="Add notes about what needs to be done..."
-            rows={2}
-            className="w-full bg-background border border-border rounded px-2 py-1 text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-gold"
-          />
-          <div className="flex gap-2 mt-1">
-            <button onClick={() => { onUpdate(task.id, { notes: editNotes }); setEditingTask(null); }} className="text-[10px] bg-gold/20 text-gold px-2 py-0.5 rounded">Save</button>
-            <button onClick={() => setEditingTask(null)} className="text-[10px] text-muted">Cancel</button>
+
+      {/* Expanded detail view */}
+      {(expanded || isEditing) && (
+        <div className="px-3 pb-3 pt-1 border-t border-border/30 space-y-2">
+          {/* Notes */}
+          <div>
+            <label className="text-[10px] text-muted uppercase tracking-wide">Notes / Context</label>
+            <textarea
+              value={isEditing ? editNotes : (task.notes || "")}
+              onChange={(e) => {
+                if (!isEditing) { setEditingTask(task.id); setEditNotes(e.target.value); }
+                else { setEditNotes(e.target.value); }
+              }}
+              onFocus={() => { if (!isEditing) { setEditingTask(task.id); setEditNotes(task.notes || ""); }}}
+              placeholder="What needs to be done? Any context..."
+              rows={2}
+              className="w-full mt-1 bg-background border border-border rounded px-2 py-1.5 text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-gold resize-none"
+            />
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-2">
+            {isEditing && (
+              <button onClick={() => { onUpdate(task.id, { notes: editNotes }); setEditingTask(null); }} className="text-[10px] bg-gold/20 text-gold px-2 py-1 rounded hover:bg-gold/30">Save Notes</button>
+            )}
+            <button onClick={() => onComplete(task.id)} className="text-[10px] bg-green-900/30 text-green-400 px-2 py-1 rounded hover:bg-green-900/50">
+              {task.status === "completed" ? "Reopen" : "Mark Done"}
+            </button>
+            <button onClick={() => onUpdate(task.id, { status: "archived" })} className="text-[10px] bg-orange-900/30 text-orange-400 px-2 py-1 rounded hover:bg-orange-900/50">Not Relevant</button>
+            <button onClick={() => { const next = task.priority === "high" ? "medium" : task.priority === "medium" ? "low" : "high"; onUpdate(task.id, { priority: next }); }} className="text-[10px] bg-surface text-muted px-2 py-1 rounded hover:text-foreground">Priority: {task.priority}</button>
+            <button onClick={() => onAddToFocus(task.id, "today")} className="text-[10px] bg-surface text-muted px-2 py-1 rounded hover:text-foreground">Focus Today</button>
+            <button onClick={() => onDelete(task.id)} className="text-[10px] text-red-400/60 px-2 py-1 rounded hover:text-red-400">Delete</button>
           </div>
         </div>
       )}
