@@ -184,22 +184,19 @@ export default function Home() {
             return (
               <section key={bucket} className="bg-surface/30 border border-border rounded-lg overflow-hidden">
                 {/* Bucket header */}
-                <button
-                  onClick={() => toggleBucket(bucket)}
-                  className="w-full flex items-center justify-between px-5 py-3 hover:bg-surface/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between px-5 py-3 hover:bg-surface/50 transition-colors">
+                  <button onClick={() => toggleBucket(bucket)} className="flex items-center gap-3">
                     <span className="text-muted text-sm">{isExpanded ? "▾" : "▸"}</span>
                     <h2 className="text-sm font-semibold text-gold uppercase tracking-wider">{bucket}</h2>
                     <span className="text-xs text-muted">{bucketTasks.length} tasks</span>
-                  </div>
+                  </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); setNewSubBucket({ bucket }); }}
+                    onClick={() => setNewSubBucket({ bucket })}
                     className="text-xs text-muted hover:text-gold px-2 py-1 rounded hover:bg-surface"
                   >
                     + Sub-bucket
                   </button>
-                </button>
+                </div>
 
                 {isExpanded && (
                   <div className="px-5 pb-4">
@@ -242,7 +239,7 @@ export default function Home() {
                               </div>
                               <div className="space-y-1">
                                 {subTasks.map((task) => (
-                                  <TaskRow key={task.id} task={task} onComplete={handleCompleteTask} onDelete={handleDeleteTask} onUpdate={handleUpdateTask} onAddToFocus={handleAddToFocus} editingTask={editingTask} setEditingTask={setEditingTask} editNotes={editNotes} setEditNotes={setEditNotes} />
+                                  <TaskRow key={task.id} task={task} onComplete={handleCompleteTask} onDelete={handleDeleteTask} onUpdate={handleUpdateTask} onAddToFocus={handleAddToFocus} editingTask={editingTask} setEditingTask={setEditingTask} editNotes={editNotes} setEditNotes={setEditNotes} allSubBuckets={subBuckets} bucket={bucket} />
                                 ))}
                                 {newTaskInput?.bucket === bucket && newTaskInput?.subBucket === sub && (
                                   <input
@@ -274,7 +271,7 @@ export default function Home() {
                       <div className="space-y-1">
                         {subBuckets.length > 0 && <p className="text-xs text-muted mb-1">General</p>}
                         {unassignedTasks.filter((t) => t.type === "task").map((task) => (
-                          <TaskRow key={task.id} task={task} onComplete={handleCompleteTask} onDelete={handleDeleteTask} onUpdate={handleUpdateTask} onAddToFocus={handleAddToFocus} editingTask={editingTask} setEditingTask={setEditingTask} editNotes={editNotes} setEditNotes={setEditNotes} />
+                          <TaskRow key={task.id} task={task} onComplete={handleCompleteTask} onDelete={handleDeleteTask} onUpdate={handleUpdateTask} onAddToFocus={handleAddToFocus} editingTask={editingTask} setEditingTask={setEditingTask} editNotes={editNotes} setEditNotes={setEditNotes} allSubBuckets={subBuckets} bucket={bucket} />
                         ))}
                       </div>
                     )}
@@ -330,7 +327,7 @@ export default function Home() {
   );
 }
 
-function TaskRow({ task, onComplete, onDelete, onUpdate, onAddToFocus, editingTask, setEditingTask, editNotes, setEditNotes }: {
+function TaskRow({ task, onComplete, onDelete, onUpdate, onAddToFocus, editingTask, setEditingTask, editNotes, setEditNotes, allSubBuckets, bucket }: {
   task: Task;
   onComplete: (id: string) => void;
   onDelete: (id: string) => void;
@@ -340,6 +337,8 @@ function TaskRow({ task, onComplete, onDelete, onUpdate, onAddToFocus, editingTa
   setEditingTask: (id: string | null) => void;
   editNotes: string;
   setEditNotes: (s: string) => void;
+  allSubBuckets?: string[];
+  bucket?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const priorityColors = { high: "bg-red-400", medium: "bg-yellow-400", low: "bg-green-400" };
@@ -378,6 +377,23 @@ function TaskRow({ task, onComplete, onDelete, onUpdate, onAddToFocus, editingTa
               className="w-full mt-1 bg-background border border-border rounded px-2 py-1.5 text-xs text-foreground placeholder:text-muted focus:outline-none focus:border-gold resize-none"
             />
           </div>
+
+          {/* Move to sub-bucket */}
+          {allSubBuckets && allSubBuckets.length > 0 && (
+            <div className="flex items-center gap-2">
+              <label className="text-[10px] text-muted">Move to:</label>
+              <select
+                value={task.sub_bucket || ""}
+                onChange={(e) => onUpdate(task.id, { sub_bucket: e.target.value })}
+                className="text-[10px] bg-background border border-border rounded px-2 py-1 text-foreground focus:outline-none focus:border-gold"
+              >
+                <option value="">General (no sub-bucket)</option>
+                {allSubBuckets.map((sub) => (
+                  <option key={sub} value={sub}>{sub}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Action buttons */}
           <div className="flex flex-wrap gap-2">
