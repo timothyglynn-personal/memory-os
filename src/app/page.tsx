@@ -174,7 +174,7 @@ export default function Home() {
 
       <div className="flex">
         {/* Main content — vertical bucket layout */}
-        <main className={`flex-1 px-6 py-6 space-y-6 ${showFocus ? "mr-80" : ""}`}>
+        <main className="flex-1 px-6 py-6 space-y-6">
           {allBuckets.map((bucket) => {
             const bucketTasks = tasks.filter((t) => t.bucket === bucket && t.status === "active");
             const subBuckets = getSubBuckets(bucket);
@@ -328,17 +328,25 @@ export default function Home() {
           })}
         </main>
 
-        {/* Focus panel (right side) */}
+        {/* Focus panel (full screen overlay) */}
         {showFocus && (
-          <aside className="fixed right-0 top-[53px] bottom-0 w-80 border-l border-border bg-background overflow-y-auto">
-            <FocusPanel
-              tasks={tasks}
-              focusItems={focusItems}
-              onRemoveFromFocus={handleRemoveFromFocus}
-              onCompleteTask={handleCompleteTask}
-              onRollOver={handleRollOver}
-            />
-          </aside>
+          <div className="fixed inset-0 top-[53px] z-40 bg-background overflow-y-auto">
+            <div className="max-w-2xl mx-auto px-6 py-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-gold">Focus List</h2>
+                <button onClick={() => setShowFocus(false)} className="text-sm text-muted hover:text-foreground px-3 py-1.5 rounded border border-border hover:border-gold">
+                  ← Back to Master List
+                </button>
+              </div>
+              <FocusPanel
+                tasks={tasks}
+                focusItems={focusItems}
+                onRemoveFromFocus={handleRemoveFromFocus}
+                onCompleteTask={handleCompleteTask}
+                onRollOver={handleRollOver}
+              />
+            </div>
+          </div>
         )}
       </div>
 
