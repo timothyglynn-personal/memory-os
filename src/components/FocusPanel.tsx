@@ -28,7 +28,7 @@ export default function FocusPanel({
   }).length;
 
   return (
-    <aside className="w-64 border-l border-border p-4 overflow-y-auto flex flex-col">
+    <div className="flex flex-col gap-6">
       {/* Today */}
       <div className="mb-6">
         <h3 className="text-gold font-semibold text-sm uppercase tracking-wider mb-3">
@@ -46,39 +46,35 @@ export default function FocusPanel({
               return (
                 <div
                   key={item.id}
-                  className={`flex items-center gap-2 px-2 py-1.5 rounded bg-surface group ${
+                  className={`px-3 py-2 rounded bg-surface group ${
                     task.status === "completed" ? "opacity-50" : ""
                   }`}
                 >
-                  <button
-                    onClick={() => onCompleteTask(task.id)}
-                    className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center ${
-                      task.status === "completed"
-                        ? "bg-gold border-gold"
-                        : "border-border hover:border-gold"
-                    }`}
-                  >
-                    {task.status === "completed" && (
-                      <span className="text-background text-[8px] font-bold">
-                        ✓
-                      </span>
-                    )}
-                  </button>
-                  <span
-                    className={`text-xs flex-1 ${
-                      task.status === "completed"
-                        ? "line-through text-muted"
-                        : ""
-                    }`}
-                  >
-                    {task.title}
-                  </span>
-                  <button
-                    onClick={() => onRemoveFromFocus(item.id)}
-                    className="text-muted hover:text-high text-xs opacity-0 group-hover:opacity-100"
-                  >
-                    x
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onCompleteTask(task.id)}
+                      className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
+                        task.status === "completed"
+                          ? "bg-gold border-gold"
+                          : "border-border hover:border-gold"
+                      }`}
+                    >
+                      {task.status === "completed" && (
+                        <span className="text-background text-[9px] font-bold">✓</span>
+                      )}
+                    </button>
+                    <span className={`text-sm flex-1 ${task.status === "completed" ? "line-through text-muted" : ""}`}>
+                      {task.title}
+                    </span>
+                    <button
+                      onClick={() => onRemoveFromFocus(item.id)}
+                      className="text-muted hover:text-high text-xs"
+                    >✕</button>
+                  </div>
+                  <div className="ml-6 mt-0.5 flex gap-1">
+                    <span className="text-[10px] text-gold/60">{task.bucket}</span>
+                    {task.sub_bucket && <span className="text-[10px] text-muted">/ {task.sub_bucket}</span>}
+                  </div>
                 </div>
               );
             })}
@@ -111,45 +107,41 @@ export default function FocusPanel({
               return (
                 <div
                   key={item.id}
-                  className={`flex items-center gap-2 px-2 py-1.5 rounded bg-surface group ${
+                  className={`px-3 py-2 rounded bg-surface group ${
                     task.status === "completed" ? "opacity-50" : ""
                   }`}
                 >
-                  <button
-                    onClick={() => onCompleteTask(task.id)}
-                    className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center ${
-                      task.status === "completed"
-                        ? "bg-gold border-gold"
-                        : "border-border hover:border-gold"
-                    }`}
-                  >
-                    {task.status === "completed" && (
-                      <span className="text-background text-[8px] font-bold">
-                        ✓
-                      </span>
-                    )}
-                  </button>
-                  <span
-                    className={`text-xs flex-1 ${
-                      task.status === "completed"
-                        ? "line-through text-muted"
-                        : ""
-                    }`}
-                  >
-                    {task.title}
-                  </span>
-                  <button
-                    onClick={() => onRemoveFromFocus(item.id)}
-                    className="text-muted hover:text-high text-xs opacity-0 group-hover:opacity-100"
-                  >
-                    x
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onCompleteTask(task.id)}
+                      className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
+                        task.status === "completed"
+                          ? "bg-gold border-gold"
+                          : "border-border hover:border-gold"
+                      }`}
+                    >
+                      {task.status === "completed" && (
+                        <span className="text-background text-[9px] font-bold">✓</span>
+                      )}
+                    </button>
+                    <span className={`text-sm flex-1 ${task.status === "completed" ? "line-through text-muted" : ""}`}>
+                      {task.title}
+                    </span>
+                    <button
+                      onClick={() => onRemoveFromFocus(item.id)}
+                      className="text-muted hover:text-high text-xs"
+                    >✕</button>
+                  </div>
+                  <div className="ml-6 mt-0.5 flex gap-1">
+                    <span className="text-[10px] text-gold/60">{task.bucket}</span>
+                    {task.sub_bucket && <span className="text-[10px] text-muted">/ {task.sub_bucket}</span>}
+                  </div>
                 </div>
               );
             })}
           </div>
         )}
       </div>
-    </aside>
+    </div>
   );
 }
