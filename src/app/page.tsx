@@ -226,19 +226,36 @@ export default function Home() {
                       </div>
                     )}
 
-                    {/* Sub-buckets as columns */}
+                    {/* Sub-buckets indented */}
                     {subBuckets.length > 0 && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                      <div className="space-y-3 mb-4">
                         {subBuckets.map((sub) => {
                           const subTasks = bucketTasks.filter((t) => t.sub_bucket === sub && t.type === "task");
                           return (
-                            <div key={sub} className="bg-surface/50 border border-border/50 rounded-lg p-3">
-                              <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">{sub}</h3>
-                                <button
-                                  onClick={() => { setNewTaskInput({ bucket, subBucket: sub }); setNewTaskTitle(""); }}
-                                  className="text-xs text-muted hover:text-gold"
-                                >+</button>
+                            <div key={sub} className="ml-4 border-l-2 border-gold/20 pl-3">
+                              <div className="flex items-center justify-between mb-1">
+                                <h3 className="text-xs font-semibold text-foreground/80 tracking-wide">{sub}</h3>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => { setNewTaskInput({ bucket, subBucket: sub }); setNewTaskTitle(""); }}
+                                    className="text-xs text-muted hover:text-gold"
+                                  >+ task</button>
+                                  <button
+                                    onClick={() => {
+                                      if (confirm(`Remove "${sub}" sub-bucket? Tasks inside will move to General.`)) {
+                                        // Move tasks out of this sub-bucket
+                                        const tasksInSub = tasks.filter((t) => t.bucket === bucket && t.sub_bucket === sub);
+                                        for (const t of tasksInSub) {
+                                          handleUpdateTask(t.id, { sub_bucket: "" });
+                                        }
+                                        // Delete the placeholder project task
+                                        const placeholder = tasks.find((t) => t.bucket === bucket && t.sub_bucket === sub && t.type === "project");
+                                        if (placeholder) handleDeleteTask(placeholder.id);
+                                      }
+                                    }}
+                                    className="text-xs text-muted hover:text-red-400"
+                                  >✕</button>
+                                </div>
                               </div>
                               <div className="space-y-1">
                                 {subTasks.map((task) => (
